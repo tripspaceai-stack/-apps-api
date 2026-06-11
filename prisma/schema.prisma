@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String?
+  name         String?
+  avatarUrl    String?
+  provider     String   @default("email")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  trips Trip[]
+
+  @@map("users")
+}
+
+model Trip {
+  id            String   @id @default(uuid())
+  ownerId       String
+  title         String
+  slug          String   @unique
+  shareToken    String   @unique
+  status        String   @default("pending")
+  tripType      String?
+  destination   String?
+  startDate     DateTime?
+  endDate       DateTime?
+  groupSize     Int?
+  workspaceJson Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  owner         User           @relation(fields: [ownerId], references: [id])
+  hotels        Hotel[]
+  activities    Activity[]
+  chatMessages  ChatMessage[]
+
+  @@map("trips")
+}
+
+model Hotel {
+  id          String  @id @default(uuid())
+  tripId      String
+  name        String
+  address     String?
+  lat         Float?
+  lng         Float?
+  checkIn     DateTime?
+  checkOut    DateTime?
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  trip        Trip    @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@map("hotels")
+}
+
+model Activity {
+  id          String   @id @default(uuid())
+  tripId      String
+  name        String
+  description String?
+  address     String?
+  lat         Float?
+  lng         Float?
+  dayNumber   Int?
+  startTime   String?
+  duration    Int?
+  createdAt   DateTime @default(now())
+
+  trip        Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@map("activities")
+}
+
+model ChatMessage {
+  id        String   @id @default(uuid())
+  tripId    String
+  role      String
+  content   String
+  diff      Json?
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@map("chat_messages")
+}
