@@ -18,6 +18,26 @@ export interface ParsedTicket {
 }
 
 export async function parseTicketImage(base64: string, mediaType: string): Promise<ParsedTicket> {
+  const isPdf = mediaType === 'application/pdf';
+
+  const fileContent = isPdf
+    ? {
+        type: 'document' as const,
+        source: {
+          type: 'base64' as const,
+          media_type: 'application/pdf' as const,
+          data: base64,
+        },
+      }
+    : {
+        type: 'image' as const,
+        source: {
+          type: 'base64' as const,
+          media_type: mediaType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
+          data: base64,
+        },
+      };
+
   const response = await client.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 1024,
@@ -25,14 +45,7 @@ export async function parseTicketImage(base64: string, mediaType: string): Promi
       {
         role: 'user',
         content: [
-          {
-            type: 'image',
-            source: {
-              type: 'base64',
-              media_type: mediaType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
-              data: base64,
-            },
-          },
+          fileContent,
           {
             type: 'text',
             text: `Extract trip information from this travel document (flight ticket, hotel booking, itinerary, etc.).
