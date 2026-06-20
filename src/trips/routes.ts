@@ -131,6 +131,16 @@ router.post('/:id/retry', requireAuth, async (req: AuthRequest, res: Response): 
   }
 });
 
+router.delete('/:id', requireAuth, async (req: AuthRequest, res: Response): Promise<void> => {
+  const { error } = await supabase
+    .from('trips')
+    .delete()
+    .eq('id', req.params.id)
+    .eq('owner_id', req.user!.userId);
+  if (error) { res.status(400).json({ error: error.message }); return; }
+  res.json({ success: true });
+});
+
 router.patch('/:id/archive', requireAuth, async (req: AuthRequest, res: Response): Promise<void> => {
   const { archived } = req.body;
   const { error } = await supabase
