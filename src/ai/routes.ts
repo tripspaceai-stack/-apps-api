@@ -12,8 +12,13 @@ router.post('/parse-ticket', async (req: Request, res: Response): Promise<void> 
     return;
   }
 
-  const result = await parseTicketImage(base64, mediaType);
-  res.json(result);
+  try {
+    const result = await parseTicketImage(base64, mediaType);
+    res.json(result);
+  } catch (err) {
+    console.error('parse-ticket error:', err);
+    res.status(500).json({ error: String(err) });
+  }
 });
 
 export default router;
