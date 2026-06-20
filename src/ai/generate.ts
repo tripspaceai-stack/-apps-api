@@ -15,6 +15,11 @@ export interface WorkspaceSchema {
       address: string;
       startTime: string;
       duration: number;
+      travelToNext?: {
+        mode: string;
+        duration: number;
+        note: string;
+      };
     }[];
   }[];
   hotels: {
@@ -62,7 +67,12 @@ Return a JSON object with this exact structure:
           "description": "Brief description",
           "address": "Full address",
           "startTime": "HH:MM",
-          "duration": 90
+          "duration": 90,
+          "travelToNext": {
+            "mode": "walk",
+            "duration": 10,
+            "note": "Short walk along the canal"
+          }
         }
       ]
     }
@@ -79,11 +89,17 @@ Return a JSON object with this exact structure:
   "tips": ["Tip 1", "Tip 2", "Tip 3"]
 }
 
+For travelToNext:
+- mode must be one of: "walk", "drive", "subway", "bus", "taxi", "cable car", "boat", "train"
+- duration is in minutes (realistic estimate)
+- note is a short human-friendly description like "Short walk through the old town" or "~15 min taxi ride"
+- The LAST activity of each day should NOT have travelToNext (omit the field)
+
 Return ONLY the JSON, no other text.`;
 
   const message = await client.messages.create({
     model: 'claude-sonnet-4-6',
-    max_tokens: 4096,
+    max_tokens: 8192,
     temperature: 0.4,
     messages: [{ role: 'user', content: prompt }],
   });
