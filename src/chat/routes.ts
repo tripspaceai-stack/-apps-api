@@ -56,7 +56,7 @@ Return ONLY valid JSON with this structure:
 
   const response = await client.messages.create({
     model: 'claude-sonnet-4-6',
-    max_tokens: 4096,
+    max_tokens: 8192,
     temperature: 0.3,
     messages: [{ role: 'user', content: prompt }],
   });
@@ -65,7 +65,15 @@ Return ONLY valid JSON with this structure:
   if (content.type !== 'text') { res.status(500).json({ error: 'Unexpected response' }); return; }
 
   const json = content.text.trim().replace(/^```json\n?/, '').replace(/\n?```$/, '');
-  const parsed = JSON.parse(json);
+
+  let parsed: { summary: string; workspace: unknown };
+  try {
+    parsed = JSON.parse(json);
+  } catch {
+    console.error('JSON parse failed. stop_reason:', response.stop_reason, 'length:', json.length);
+    res.status(500).json({ error: 'AI returned incomplete response. Please try again with a simpler request.' });
+    return;
+  }
 
   // Save assistant message with diff
   const { data: chatMsg } = await supabase.from('chat_messages').insert({
