@@ -17,6 +17,21 @@ function generateSlug(destination: string): string {
   return `${base}-${suffix}`;
 }
 
+router.get('/public/:slug', async (req, res: Response): Promise<void> => {
+  const { token } = req.query;
+  if (!token) { res.status(401).json({ error: 'Token required' }); return; }
+
+  const { data, error } = await supabase
+    .from('trips')
+    .select()
+    .eq('slug', req.params.slug)
+    .eq('share_token', token as string)
+    .single();
+
+  if (error || !data) { res.status(404).json({ error: 'Trip not found' }); return; }
+  res.json(data);
+});
+
 router.post('/', requireAuth, async (req: AuthRequest, res: Response): Promise<void> => {
   const { tripType, destination, startDate, endDate, groupSize, accommodation, activities, preferences } = req.body;
 
