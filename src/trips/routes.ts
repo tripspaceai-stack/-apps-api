@@ -100,6 +100,37 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response): Promise<vo
   res.json(data);
 });
 
+router.post('/:id/retry', requireAuth, async (req: AuthRequest, res: Response): Promise<void> => {
+  const { data: trip, error } = await supabase
+    .from('trips')
+    .select()
+    .eq('id', req.params.id)
+    .eq('owner_id', req.user!.userId)
+    .single();
+
+  if (error || !trip) { res.status(404).json({ error: 'Trip not found' }); return; }
+
+  await supabase.from('trips').update({ status: 'generating', workspace_json: null }).eq('id', trip.id);
+  res.json({ success: true });
+
+  try {
+    const workspace = await generateWorkspace({
+      tripType: trip.trip_type,
+      destination: trip.destination,
+      startDate: trip.start_date,
+      endDate: trip.end_date,
+      groupSize: trip.group_size,
+      accommodation: '',
+      activities: [],
+      preferences: '',
+    });
+    await supabase.from('trips').update({ workspace_json: workspace, status: 'live', title: workspace.title }).eq('id', trip.id);
+  } catch (err) {
+    console.error('AI retry failed:', err);
+    await supabase.from('trips').update({ status: 'failed' }).eq('id', trip.id);
+  }
+});
+
 router.use('/:id/chat', chatRoutes);
 router.use('/:id/modules', moduleRoutes);
 
