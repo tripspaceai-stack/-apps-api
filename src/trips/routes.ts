@@ -131,6 +131,17 @@ router.post('/:id/retry', requireAuth, async (req: AuthRequest, res: Response): 
   }
 });
 
+router.patch('/:id/archive', requireAuth, async (req: AuthRequest, res: Response): Promise<void> => {
+  const { archived } = req.body;
+  const { error } = await supabase
+    .from('trips')
+    .update({ archived: !!archived })
+    .eq('id', req.params.id)
+    .eq('owner_id', req.user!.userId);
+  if (error) { res.status(400).json({ error: error.message }); return; }
+  res.json({ success: true });
+});
+
 router.use('/:id/chat', chatRoutes);
 router.use('/:id/modules', moduleRoutes);
 
