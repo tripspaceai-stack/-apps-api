@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import { AuthRequest, requireAuth } from '../middleware/auth';
 import { generateWorkspace } from '../ai/generate';
+import chatRoutes from '../chat/routes';
 import crypto from 'crypto';
 
 const router = Router();
@@ -97,5 +98,7 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response): Promise<vo
   if (error) { res.status(400).json({ error: error.message }); return; }
   res.json(data);
 });
+
+router.use('/:id/chat', chatRoutes);
 
 export default router;
