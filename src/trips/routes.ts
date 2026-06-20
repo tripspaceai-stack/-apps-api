@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import { AuthRequest, requireAuth } from '../middleware/auth';
+import { generateWorkspace } from '../ai/generate';
 import crypto from 'crypto';
 
 const router = Router();
@@ -22,6 +23,7 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response): Promise<v
   const slug = generateSlug(destination || 'trip');
   const shareToken = crypto.randomBytes(16).toString('hex');
 
+  // Create trip with pending status
   const { data, error } = await supabase
     .from('trips')
     .insert({
@@ -29,13 +31,13 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response): Promise<v
       title: `Trip to ${destination}`,
       slug,
       share_token: shareToken,
-      status: 'pending',
+      status: 'generating',
       trip_type: tripType,
       destination,
       start_date: startDate || null,
       end_date: endDate || null,
       group_size: groupSize,
-      workspace_json: { accommodation, activities, preferences },
+      workspace_json: null,
     })
     .select()
     .single();
@@ -45,7 +47,17 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response): Promise<v
     return;
   }
 
+  // Return immediately so frontend can show progress
   res.json(data);
+
+  // Generate workspace in background
+  try {
+    const workspace = await generateWorkspace({ tripType, destination, startDate, endDate, groupSize, accommodation, activities, preferences });
+    await supabase.from('trips').update({ workspace_json: workspace, status: 'live', title: workspace.title }).eq('id', data.id);
+  } catch (err) {
+    console.error('AI generation failed:', err);
+    await supabase.from('trips').update({ status: 'failed' }).eq('id', data.id);
+  }
 });
 
 router.get('/', requireAuth, async (req: AuthRequest, res: Response): Promise<void> => {
