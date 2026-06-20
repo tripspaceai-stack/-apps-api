@@ -60,6 +60,18 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response): Promise<v
   }
 });
 
+router.get('/:id', requireAuth, async (req: AuthRequest, res: Response): Promise<void> => {
+  const { data, error } = await supabase
+    .from('trips')
+    .select()
+    .eq('id', req.params.id)
+    .eq('owner_id', req.user!.userId)
+    .single();
+
+  if (error || !data) { res.status(404).json({ error: 'Trip not found' }); return; }
+  res.json(data);
+});
+
 router.get('/', requireAuth, async (req: AuthRequest, res: Response): Promise<void> => {
   const { data, error } = await supabase
     .from('trips')
