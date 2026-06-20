@@ -52,6 +52,8 @@ Accommodation: ${tripData.accommodation || 'Not specified'}
 Preferred Activities: ${tripData.activities.join(', ') || 'General sightseeing'}
 Additional Preferences: ${tripData.preferences || 'None'}
 
+Keep descriptions concise (under 15 words each). Max 4 activities per day. Max 7 days total.
+
 Return a JSON object with this exact structure:
 {
   "title": "Trip title",
